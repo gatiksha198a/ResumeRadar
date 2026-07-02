@@ -811,8 +811,38 @@ if 'page' not in st.session_state:
     st.session_state.page = "Home"
 
 
+@st.cache_resource(show_spinner=False)
+def get_resume_parser():
+    return ResumeParser()
+
+
+@st.cache_resource(show_spinner=False)
+def get_semantic_matcher():
+    return SemanticMatcher()
+
+
+@st.cache_resource(show_spinner=False)
+def get_decision_engine():
+    return DecisionEngine()
+
+
+@st.cache_resource(show_spinner=False)
+def get_ats_checker():
+    return ATSChecker()
+
+
+@st.cache_resource(show_spinner=False)
+def get_skill_extractor():
+    return SkillExtractor()
+
+
+@st.cache_resource(show_spinner=False)
+def get_credibility_checker():
+    return CredibilityChecker()
+
+
 def parse_uploaded_file(uploaded_file) -> Dict:
-    parser = ResumeParser()
+    parser = get_resume_parser()
     content = uploaded_file.read()
     parsed = parser.parse_file(content, uploaded_file.name)
     return parser.to_dict(parsed)
@@ -822,7 +852,7 @@ def analyze_resume(resume_data: Dict, job_description: str, required_skills: Lis
     results = {}
     
     # 1. Semantic matching
-    matcher = SemanticMatcher()
+    matcher = get_semantic_matcher()
     match_result = matcher.match_resume_to_job(resume_data, job_description, required_skills)
     results['match'] = {
         'overall_score': match_result.overall_score,
@@ -834,7 +864,7 @@ def analyze_resume(resume_data: Dict, job_description: str, required_skills: Lis
     }
     
     # 2. Hiring decision
-    decision_engine = DecisionEngine()
+    decision_engine = get_decision_engine()
     decision = decision_engine.decide(results['match'], resume_data)
     results['decision'] = {
         'decision': decision.decision,
@@ -844,7 +874,7 @@ def analyze_resume(resume_data: Dict, job_description: str, required_skills: Lis
     }
     
     # 3. ATS check
-    ats_checker = ATSChecker()
+    ats_checker = get_ats_checker()
     ats_result = ats_checker.check_resume(resume_data, job_description)
     results['ats'] = {
         'score': ats_result.score,
@@ -854,7 +884,7 @@ def analyze_resume(resume_data: Dict, job_description: str, required_skills: Lis
     }
     
     # 4. Skill extraction
-    skill_extractor = SkillExtractor()
+    skill_extractor = get_skill_extractor()
     skills_result = skill_extractor.extract_skills(resume_data.get('raw_text', ''))
     results['skills'] = {
         'categories': {k: {'skills': v.skills, 'level': v.level} for k, v in skills_result.items()},
@@ -866,7 +896,7 @@ def analyze_resume(resume_data: Dict, job_description: str, required_skills: Lis
     results['classification'] = classification
     
     # 6. Additional analysis
-    credibility_checker = CredibilityChecker()
+    credibility_checker = get_credibility_checker()
     credibility = credibility_checker.analyze(resume_data, job_description)
     results['credibility'] = credibility.to_dict()
 
@@ -1970,4 +2000,3 @@ def history_page():
 
 if __name__ == "__main__":
     main()
-

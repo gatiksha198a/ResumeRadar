@@ -84,10 +84,10 @@ class SkillExtractor:
         try:
             self.nlp = spacy.load(model)
         except OSError:
-            print(f"Downloading spaCy model: {model}")
-            import subprocess
-            subprocess.run(["python", "-m", "spacy", "download", model])
-            self.nlp = spacy.load(model)
+            raise RuntimeError(
+                f"spaCy model '{model}' is not installed. Install it during setup "
+                "or add it to requirements.txt for hosted deployments."
+            )
         
         # Build skill lookup
         self._build_skill_lookup()
