@@ -1,0 +1,1 @@
+"""ResumeRadar Streamlit app package."""

@@ -843,7 +843,9 @@ def get_credibility_checker():
 
 def parse_uploaded_file(uploaded_file) -> Dict:
     parser = get_resume_parser()
-    content = uploaded_file.read()
+    content = uploaded_file.getvalue()
+    if not content:
+        raise ValueError("The uploaded file is empty. Please upload a valid PDF or DOCX resume.")
     parsed = parser.parse_file(content, uploaded_file.name)
     return parser.to_dict(parsed)
 
@@ -1446,7 +1448,7 @@ def single_resume_analysis():
     
     with col1:
         st.markdown('<div class="card"><h4 style="color: #1e293b; margin-bottom: 15px;">Upload Resume</h4>', unsafe_allow_html=True)
-        uploaded_file = st.file_uploader("Choose a resume file", type=['pdf', 'docx'], help="Upload PDF or DOCX", label_visibility="collapsed")
+        uploaded_file = st.file_uploader("Choose a PDF or DOCX resume", type=['pdf', 'docx'], help="Upload PDF or DOCX")
         
         if uploaded_file:
             if st.button("Parse Resume", type="primary", use_container_width=True):
@@ -1474,7 +1476,7 @@ def single_resume_analysis():
     
     with col2:
         st.markdown('<div class="card"><h4 style="color: #1e293b; margin-bottom: 15px;">Job Description</h4>', unsafe_allow_html=True)
-        job_description = st.text_area("Paste job description", height=180, placeholder="Paste the job description here...", label_visibility="collapsed")
+        job_description = st.text_area("Paste job description", height=180, placeholder="Paste the job description here...")
         required_skills = st.text_input("Required Skills (comma-separated)", placeholder="python, machine learning, aws, docker", help="Enter skills separated by commas")
         github_override = st.text_input("GitHub Profile (optional)", placeholder="https://github.com/username", help="Used for portfolio validation if the resume does not already include GitHub")
         
@@ -1678,12 +1680,12 @@ def batch_ranking():
     col1, col2 = st.columns([1, 1], gap="large")
     with col1:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        job_description = st.text_area("Job Description", height=150, placeholder="Paste job description...", label_visibility="collapsed")
+        job_description = st.text_area("Job Description", height=150, placeholder="Paste job description...")
         required_skills = st.text_input("Required Skills (comma-separated)", placeholder="python, sql, aws", help="Enter skills separated by commas")
         st.markdown("</div>", unsafe_allow_html=True)
     with col2:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        uploaded_files = st.file_uploader("Upload Resumes (multiple)", type=['pdf', 'docx'], accept_multiple_files=True, help="Upload multiple PDF or DOCX files", label_visibility="collapsed")
+        uploaded_files = st.file_uploader("Upload PDF or DOCX resumes", type=['pdf', 'docx'], accept_multiple_files=True, help="Upload multiple PDF or DOCX files")
         if uploaded_files: st.success(f"{len(uploaded_files)} files uploaded")
         st.markdown("</div>", unsafe_allow_html=True)
     
@@ -1916,11 +1918,11 @@ def ats_checker_page():
     col1, col2 = st.columns([1, 1], gap="large")
     with col1:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        uploaded_file = st.file_uploader("Upload Resume", type=['pdf', 'docx'], label_visibility="collapsed")
+        uploaded_file = st.file_uploader("Upload a PDF or DOCX resume", type=['pdf', 'docx'])
         st.markdown("</div>", unsafe_allow_html=True)
     with col2:
         st.markdown("<div class='card'>", unsafe_allow_html=True)
-        job_description = st.text_area("Job Description (optional)", height=150, placeholder="Paste job description for keyword analysis...", label_visibility="collapsed")
+        job_description = st.text_area("Job Description (optional)", height=150, placeholder="Paste job description for keyword analysis...")
         st.markdown("</div>", unsafe_allow_html=True)
     
     if uploaded_file and st.button("Check ATS", type="primary", use_container_width=True):
