@@ -9,9 +9,6 @@ from dataclasses import dataclass, field
 import warnings
 warnings.filterwarnings('ignore')
 
-import spacy
-
-
 @dataclass
 class SkillCategory:
     """Category of skills"""
@@ -80,14 +77,12 @@ class SkillExtractor:
     }
     
     def __init__(self, model: str = "en_core_web_sm"):
-        """Initialize spaCy model"""
-        try:
-            self.nlp = spacy.load(model)
-        except OSError:
-            raise RuntimeError(
-                f"spaCy model '{model}' is not installed. Install it during setup "
-                "or add it to requirements.txt for hosted deployments."
-            )
+        """Initialize skill extractor.
+
+        Skill detection is pattern-based, so the Streamlit app can run without a
+        hosted spaCy model download.
+        """
+        self.nlp = None
         
         # Build skill lookup
         self._build_skill_lookup()

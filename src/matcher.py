@@ -1,15 +1,17 @@
 """
 Semantic Matcher Module
-Compares resumes with job descriptions using sentence-transformers
+Compares resumes with job descriptions using semantic or TF-IDF similarity.
 """
 
 import numpy as np
+import os
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 import warnings
 warnings.filterwarnings('ignore')
 
-from sentence_transformers import SentenceTransformer, util
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 
 @dataclass
@@ -28,10 +30,23 @@ class SemanticMatcher:
     """Match resumes to job descriptions using semantic similarity"""
     
     def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
-        """Initialize the semantic matcher with a sentence-transformer model"""
-        print(f"Loading sentence-transformer model: {model_name}")
-        self.model = SentenceTransformer(model_name)
-        print("Model loaded successfully!")
+        """Initialize the matcher.
+
+        Hosted deployments can run without heavyweight transformer packages; in
+        that case we use TF-IDF cosine similarity as a fast, reliable fallback.
+        """
+        self.model = None
+        self.embedding_util = None
+        self.vectorizer = TfidfVectorizer(stop_words="english", ngram_range=(1, 2), max_features=5000)
+        if os.getenv("RESUMERADAR_USE_TRANSFORMERS") == "1":
+            try:
+                from sentence_transformers import SentenceTransformer, util
+                print(f"Loading sentence-transformer model: {model_name}")
+                self.model = SentenceTransformer(model_name)
+                self.embedding_util = util
+                print("Model loaded successfully!")
+            except Exception as exc:
+                print(f"Using TF-IDF fallback because sentence-transformer loading failed: {exc}")
         
         # Job-related keywords for better matching
         self.job_keywords = [
@@ -197,11 +212,17 @@ class SemanticMatcher:
         # Truncate to avoid memory issues
         text1 = text1[:2000]
         text2 = text2[:2000]
-        
-        embeddings = self.model.encode([text1, text2], convert_to_tensor=True)
-        similarity = util.cos_sim(embeddings[0], embeddings[1])
-        
-        return float(similarity[0][0])
+
+        if not text1.strip() or not text2.strip():
+            return 0.0
+
+        if self.model is not None and self.embedding_util is not None:
+            embeddings = self.model.encode([text1, text2], convert_to_tensor=True)
+            similarity = self.embedding_util.cos_sim(embeddings[0], embeddings[1])
+            return float(similarity[0][0])
+
+        matrix = self.vectorizer.fit_transform([text1, text2])
+        return float(cosine_similarity(matrix[0], matrix[1])[0][0])
     
     def _analyze_skill_match(
         self, 
@@ -245,7 +266,9 @@ class SemanticMatcher:
     
     def get_skill_embeddings(self, skills: List[str]) -> np.ndarray:
         """Get embeddings for a list of skills"""
-        return self.model.encode(skills, convert_to_tensor=True)
+        if self.model is not None:
+            return self.model.encode(skills, convert_to_tensor=True)
+        return self.vectorizer.fit_transform(skills).toarray()
 
 
 def calculate_match_score(
